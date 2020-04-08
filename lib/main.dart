@@ -5,22 +5,11 @@ import 'package:tflite/tflite.dart';
 import 'package:image_picker/image_picker.dart';
 
 void main() => runApp(MaterialApp(
-  home: Detect(),
+  home: DetectMain(),
   debugShowCheckedModeBanner: false,
 ));
 
-
-// stateless widget to load main home widget
-class Detect extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return DetectMain();
-  }
-}
-
 class DetectMain extends StatefulWidget {
-  // private camera object: get assigned to global one
-  DetectMain();
   @override
   _DetectMainState createState() => new _DetectMainState();
 }
@@ -31,7 +20,6 @@ class _DetectMainState extends State<DetectMain> {
   double _imageWidth;
   double _imageHeight;
   var _recognitions;
-  var _pLabel;
 
   loadModel() async {
     Tflite.close();
@@ -48,9 +36,7 @@ class _DetectMainState extends State<DetectMain> {
   }
 
   // run prediction using TFLite on given image
-  Future<String> predict(File image) async {
-
-    String pLabel;
+  Future predict(File image) async {
 
     var recognitions = await Tflite.runModelOnImage(
         path: image.path,   // required
@@ -67,31 +53,21 @@ class _DetectMainState extends State<DetectMain> {
       _recognitions = recognitions;
     });
 
-    if(_recognitions.isNotEmpty) {
-      pLabel = _recognitions[0]['label'].toString().toUpperCase();
-    }
-
-    return pLabel;
-
   }
 
   // send image to predict method selected from gallery or camera
   sendImage(File image) async {
     if(image == null) return;
-    String pLabel = await predict(image);
+    await predict(image);
 
     // get the width and height of selected image
     FileImage(image).resolve(ImageConfiguration()).addListener((ImageStreamListener((ImageInfo info, bool _){
       setState(() {
         _imageWidth = info.image.width.toDouble();
         _imageHeight = info.image.height.toDouble();
+        _image = image;
       });
     })));
-
-    setState(() {
-      _image = image;
-      _pLabel = pLabel;
-    });
   }
 
   // select image from gallery
@@ -136,7 +112,7 @@ class _DetectMainState extends State<DetectMain> {
       padding: EdgeInsets.fromLTRB(0,0,0,0),
       child: Center(
         child: Text(
-          "Prediction: "+_pLabel,
+          "Prediction: "+_recognitions[0]['label'].toString().toUpperCase(),
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
       ),
